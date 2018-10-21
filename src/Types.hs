@@ -2,17 +2,17 @@
 
 module Types where
 
-import           Data.Char    (toLower)
+import           Data.Char       (toLower)
+import qualified Data.List       as List
+import qualified Data.List.Split as List
 import           Data.Maybe
 import           Data.Ord
 import           Data.Ratio
-import           Data.Yaml    ((.=), (.:))
-import           GHC.Generics (Generic)
-import           Text.Read    (readMaybe)
-import qualified Data.List       as List
-import qualified Data.List.Split as List
 import qualified Data.Text       as Text hiding (toLower)
+import           Data.Yaml       ((.:), (.=))
 import qualified Data.Yaml       as Yaml
+import           GHC.Generics    (Generic)
+import           Text.Read       (readMaybe)
 
 import qualified Lang.Strings    as Str
 import           RichText
@@ -174,12 +174,12 @@ instance Ord Ingredient where
               x  -> x
       x  -> x
 
-data Recipe = Recipe { recipeName :: String
+data Recipe = Recipe { recipeName  :: String
                      , description :: String
                      , servingSize :: Int
                      , ingredients :: [Ingredient]
-                     , directions :: [String]
-                     , tags :: [String]
+                     , directions  :: [String]
+                     , tags        :: [String]
                      } deriving (Eq, Generic, Show, Read)
 
 -- instance Yaml.ToJSON [Ingredient] where
@@ -220,6 +220,35 @@ showFrac x
   | whole > 0 = show whole ++ " " ++  showFrac (x - fromIntegral whole)
   | otherwise = show (numerator x) ++ "/" ++ show (denominator x)
   where whole = floor $ fromIntegral (numerator x) / fromIntegral (denominator x)
+
+showFrac' :: Bool -> Ratio Int -> String
+showFrac' False r = showFrac r
+showFrac' True r
+  | d == 1    = show n -- Whole number
+  | w > 0     = show w ++ " " ++ showFrac' True (r - fromIntegral w) -- Improper fractions
+  | r == 1%2  = "½" -- Vulgar fractions
+  | r == 1%3  = "⅓"
+  | r == 2%3  = "⅔"
+  | r == 1%4  = "¼"
+  | r == 3%4  = "¾"
+  | r == 1%5  = "⅕"
+  | r == 2%5  = "⅖"
+  | r == 3%5  = "⅗"
+  | r == 4%5  = "⅘"
+  | r == 1%6  = "⅙"
+  | r == 5%6  = "⅚"
+  | r == 1%7  = "⅐"
+  | r == 1%8  = "⅛"
+  | r == 3%8  = "⅜"
+  | r == 5%8  = "⅝"
+  | r == 7%8  = "⅞"
+  | r == 1%9  = "⅑"
+  | r == 1%10 = "⅒"
+  | otherwise = show n ++ "/" ++ show d
+  where
+    n = numerator r
+    d = denominator r
+    w = floor $ fromIntegral n / fromIntegral d
 
 readFrac :: String -> Ratio Int
 readFrac x
@@ -306,5 +335,5 @@ fillVoidTo xs n =
   where l = List.length xs
 
 fillVoid :: [[String]] -> Int -> [[String]]
-fillVoid [] _ = []
+fillVoid [] _     = []
 fillVoid (x:xs) n = fillVoidTo x n : fillVoid xs n
